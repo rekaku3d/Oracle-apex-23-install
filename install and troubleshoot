@@ -1,0 +1,158 @@
+The Following are Versions which i downloaded:
+Oracle Database Express 21c
+Oracle Apex (23+) or update to (22.2)
+Oracle ORDS (23+)
+Oracle ORDS (23+)
+
+----------------------------------------------------------------------------------------------------------------------------------
+My setting is using E: drive
+
+The Following are Folder Locations where i put installation files:
+Database: E:\apex\oracle21c
+SQLDeveloper: E:\apex\sqldeveloper
+APEX: E:\apex\apex-latest\apex
+Ords include setup: E:\apex\ords
+
+---------------------------------------Oracle Apex (22.1) Installation or updating latest version--------------------------------
+Run Command Prompt as Administrator
+Cd E:\apex\apex-latest\apex
+sqlplus /nolog
+conn sys/mypassword as sysdba
+
+-----------------------------------------Disable password complexity-------------------------------------------------------------
+ALTER PROFILE DEFAULT LIMIT PASSWORD_VERIFY_FUNCTION NULL;
+
+SHOW PDBS
+ALTER  SESSION SET CONTAINER=ORCLPDB;
+COLUMN default_tablespace FORMAT A20;
+COLUMN temporary_tablespace FORMAT A20;
+@apexins sysaux sysaux temp /i/ 
+
+Then,
+@apex_rest_config 
+(enter passwords for APEX_LISTENER AND APEX_REST_PUBLIC_USER in mypassword small letter) 
+
+After that,
+@apxchpwd 
+(username will be same as admin and give your email: jkrswkmechb@gmail.com and password : mypassword)
+
+ALTER USER APEX_LISTENER IDENTIFIED BY Ojai#1983 ACCOUNT UNLOCK; 
+ALTER USER APEX_PUBLIC_USER IDENTIFIED BY Ojai#1983 ACCOUNT UNLOCK; 
+ALTER USER APEX_REST_PUBLIC_USER IDENTIFIED BY Ojai#1983 ACCOUNT UNLOCK; 
+Exit command prompt
+
+
+-----------------------------------------------Oracle ORDS (23) Installation----------------------------------------------------
+First,
+Create folder config(conf) under ords: E:\apex\ords\conf
+
+Open command prompt run as Administrator
+Cd E:\apex\ords
+
+For java      =   java -jar ords.war --config D:\Apex\app\ords\ords-latest\conf install    or
+Using ords    =   ords --config E:\apex\ords\conf install     (recomended)
+
+ Choose Default Option 2 and Enter
+ Choose Default option 1 and enter
+ Localhost
+ port:1521
+ Enter the database service name [orcl]: ORCLPDB
+ Enter the administrator username: sys
+ Enter the database password for SYS AS SYSDBA: mypassword
+ Apex static resource location: E:\apex\apex-latest\apex\images
+
+ Enter the HTTP port [8080]: 90  or 8080
+ 
+ [1] Configure and start ORDS in standalone mode
+ [2] Skip
+ Choose [1]: 1
+
+---------------------------------------------------------URL for APEX----------------------------------------------------------- 
+http://localhost:90/ords
+
+To Start ORDS Services
+
+cmd   cd E:\apex\ords
+java -jar ords.war --config E:\apex\ords\conf serve            or
+
+cmd   cd E:\apex\ords
+ords --config E:\apex\ords\conf serve
+
+WORKSPACE|  USERNAME |  PASSWORD
+---------|-----------|----------------
+INTERNAL |  ADMIN    |  mypassword
+
+
+
+------------------------------------------------------------Troubleshoot-------------------------------------------------------
+1) ORDS was unable to make a connection to the database. This can occur if the database is unavailable, the maximum number of 
+sessions has been reached or the pool is not correctly configured. The connection pool named: |default|lo| had the following 
+error(s): ORA-01109: database not open
+
+Solution: 	alter pluggable database orclpdb open;
+          	alter database open;
+		        Then Restart ORDS Services
+
+2) Make pdb automatic startup open
+
+Solution:   alter pluggable database orclpdb save state;
+
+
+3) Install oracle database 21c error
+
+Solution:
+Run cmd as administrator, delete this services:
+sc delete OracleServiceORCL
+sc delete OracleOraDB21Home1TNSListener
+sc delete OracleOraDB21Home1MTSRecoveryService
+sc delete OracleJobSchedulerORCL
+sc delete OracleVssWriterORCL
+
+Then, delete all files in C:\Program Files\Oracle\Inventory
+
+
+4) Ords password expired troubleshoot.
+
+Solution:
+ALTER  SESSION SET CONTAINER=ORCLPDB;
+SQL>  select USERNAME,ACCOUNT_STATUS, LOCK_DATE, EXPIRY_DATE from DBA_USERS;
+SQL>  alter user ords_public_user IDENTIFIED BY mypassword;
+SQL>  ALTER PROFILE DEFAULT LIMIT PASSWORD_LIFE_TIME UNLIMITED;
+SQL>  alter user ords_public_user ACCOUNT UNLOCK;
+
+Then, 
+
+re-install ords.
+
+SQL>
+update apex_050000.wwv_flow_fnd_user
+set web_password = 'mypassword'
+where user_name = 'admin'
+and security_group_id = 10;
+ 
+Commit;
+
+5) UNINSTALL ORDS adn ORDS database
+
+Solution:
+cmd cd E:\apex\ords
+ords --config E:\apex\ords\conf uninstall
+
+UNINSTALL APEX
+cmd	cd apex directory
+Login SQL
+SQL>   @apxremov.sql 
+
+
+----------------------------------------Cloudflare Ords CORS origin sharing trobleshoots---------------------------------------
+1) Setting conf cors header in ords folder using cmd
+cmd cd E:\apex\ords
+ords --config E:\apex\ords\conf config set security.httpsHeaderCheck "X-Forwarded-Proto: https"
+
+2)Add domain name to ords cors
+cmd cd E:\apex\ords
+ords --config E:\apex\ords\conf config set security.externalSessionTrustedOrigins "https://apexhome.rekaku3d.work, http://localhost.90"
+
+
+!--Finish--!
+
